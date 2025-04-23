@@ -60,7 +60,6 @@ src/
 ├── controllers/    # Route handlers
 ├── models/        # Database models
 ├── routes/        # Express routers
-├── services/      # Business logic
 ├── utils/         # Helpers & utilities
 ├── middleware/    # Auth & other middleware
 ├── sockets/       # Socket.IO setup

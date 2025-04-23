@@ -1,17 +1,17 @@
 import { Request, Response } from 'express';
-import { getAllUsers, getUserById } from '../services/userService.js';
 import asyncHandler from 'express-async-handler';
 import { AuthRequest } from '../middlewares/isAuthenticated.js';
+import { User } from '../models/userModel.js';
 
 export const fetchUsers = asyncHandler(async (req: Request, res: Response) => {
-    const users = await getAllUsers();
+    const users = await User.find();
     res.json(users);
 });
 
 export const getUserProfile = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         const id = req.user?.id;
-        const user = await getUserById(id);
+        const user = await User.findById(id);
         res.json(user);
     }
 );
