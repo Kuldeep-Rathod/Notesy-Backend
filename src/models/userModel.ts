@@ -7,6 +7,7 @@ export interface IUser extends Document {
     name: string;
     email: string;
     password: string;
+    labels: string[];
     photo: string;
     gender: 'Male' | 'Female';
     createdAt: Date;
@@ -33,6 +34,11 @@ const userSchema: Schema<IUser> = new Schema(
             minlength: [6, 'Password must be at least 6 characters'],
             select: false, // won't be returned in queries unless explicitly selected
         },
+        labels: [
+            {
+                type: String,
+            },
+        ],
         photo: {
             type: String,
             required: [true, 'Please add user photo'],

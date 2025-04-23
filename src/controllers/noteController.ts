@@ -2,6 +2,7 @@ import { Response } from 'express';
 import mongoose from 'mongoose';
 import { AuthRequest } from '../middlewares/isAuthenticated.js';
 import { INote, Note } from '../models/notesModel.js';
+import asyncHandler from 'express-async-handler';
 
 export const createNote = async (req: AuthRequest, res: Response) => {
     try {
@@ -37,25 +38,24 @@ export const getTrashedNotes = async (req: AuthRequest, res: Response) => {
     }
 };
 
-export const updateNote = async (
-    req: AuthRequest,
-    res: Response
-): Promise<void> => {
-    try {
-        const note = await Note.findOneAndUpdate(
-            { _id: req.params.id, userId: req.user!._id },
-            req.body,
-            { new: true }
-        );
-        if (!note) {
-            res.status(404).json({ message: 'Note not found' });
-            return;
+export const updateNote = asyncHandler(
+    async (req: AuthRequest, res: Response): Promise<void> => {
+        try {
+            const note = await Note.findOneAndUpdate(
+                { _id: req.params.id, userId: req.user!._id },
+                req.body,
+                { new: true }
+            );
+            if (!note) {
+                res.status(404).json({ message: 'Note not found' });
+                return;
+            }
+            res.status(200).json(note);
+        } catch (error: any) {
+            res.status(500).json({ message: error.message });
         }
-        res.status(200).json(note);
-    } catch (error: any) {
-        res.status(500).json({ message: error.message });
     }
-};
+);
 
 export const moveNoteToBin = async (
     req: AuthRequest,
