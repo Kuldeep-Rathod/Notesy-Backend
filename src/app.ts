@@ -10,7 +10,8 @@ import loggerMiddleware from './middlewares/loggerMiddleware.js';
 
 //importing routes
 import authRoutes from './routes/authRoutes.js';
-import userRoute from './routes/userRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import noteRoutes from './routes/noteRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -33,7 +34,8 @@ app.get('/', (req, res) => {
 
 // using routes
 app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/user', userRoute);
+app.use('/api/v1/user', userRoutes);
+app.use('/api/v1/note', noteRoutes);
 
 app.use('/uploads', express.static('uploads'));
 app.use(errorMiddleware);
