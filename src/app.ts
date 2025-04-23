@@ -1,15 +1,16 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import NodeCache from 'node-cache';
-import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import { errorMiddleware } from './middlewares/error.js';
+import dotenv from 'dotenv';
+import express from 'express';
+import morgan from 'morgan';
+import NodeCache from 'node-cache';
 import { connectDB } from './config/db.js';
+import { errorMiddleware } from './middlewares/error.js';
 import loggerMiddleware from './middlewares/loggerMiddleware.js';
 
 //importing routes
-import userRoute from './routes/userRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import userRoute from './routes/userRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -21,6 +22,7 @@ const app = express();
 app.use(express.json());
 app.use(loggerMiddleware);
 app.use(morgan('dev'));
+app.use(cookieParser());
 app.use(cors());
 
 export const myCache = new NodeCache();
