@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User } from '../models/userModel.js';
 
@@ -11,13 +10,24 @@ const generateToken = (email: string) => {
 };
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-    const existing = await User.findOne({ email: req.body.email });
-    if (existing) {
+    const { email, name, firebaseUid } = req.body;
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
         res.status(400);
         throw new Error('User already exists');
     }
 
-    const user = await User.create(req.body);
+    // Create new user without password (since auth is handled by Firebase)
+    const user = await User.create({
+        email,
+        name,
+        firebaseUid,
+        password: undefined, // No password stored in MongoDB
+    });
+
+    // Generate JWT token for your backend API
     const token = generateToken(user.email);
 
     res.cookie('token', token, {
@@ -25,30 +35,36 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    })
-        .status(201)
-        .json({ message: 'User registered successfully' });
+    });
+
+    res.status(201).json({
+        message: 'User registered successfully',
+        token,
+        user: {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            firebaseUid: user.firebaseUid,
+        },
+    });
 });
 
-export const login = asyncHandler(async (req: Request, res: Response) => {
-    const { email, password } = req.body;
+export const checkUserExists = asyncHandler(async (req, res) => {
+    const { email } = req.query;
 
-    const user = await User.findOne({ email }).select('+password');
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-        res.status(401);
-        throw new Error('Invalid email or password');
+    if (!email) {
+        res.status(400);
+        throw new Error('Email is required');
     }
 
-    const token = generateToken(user.email);
+    const user = await User.findOne({ email });
 
-    res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
-        .status(200)
-        .json({ message: 'Login successful' });
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found');
+    }
+
+    res.status(200).json({ exists: true });
 });
 
 export const logout = (req: Request, res: Response): void => {
