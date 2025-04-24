@@ -13,6 +13,7 @@ import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import noteRoutes from './routes/noteRoutes.js';
 import labelRoutes from './routes/labelRoutes.js';
+import collabRoutes from './routes/collabRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -38,6 +39,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/note', noteRoutes);
 app.use('/api/v1/label', labelRoutes);
+app.use('/api/v1/collab', collabRoutes);
 
 app.use('/uploads', express.static('uploads'));
 app.use(errorMiddleware);

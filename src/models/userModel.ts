@@ -1,9 +1,10 @@
+import bcrypt from 'bcryptjs';
 import mongoose, { Document, Schema } from 'mongoose';
 import validator from 'validator';
-import bcrypt from 'bcryptjs';
 
 // Interface for User
 export interface IUser extends Document {
+    _id: mongoose.Types.ObjectId;
     name: string;
     email: string;
     password: string;
