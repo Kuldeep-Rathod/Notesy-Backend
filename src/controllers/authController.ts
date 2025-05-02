@@ -30,10 +30,12 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     // Generate JWT token for your backend API
     const token = generateToken(user.email);
 
+    console.log('tokenn', token);
+
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'none',
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -53,15 +55,15 @@ export const checkUserExists = asyncHandler(async (req, res) => {
     const { email } = req.query;
 
     if (!email) {
-        res.status(400);
-        throw new Error('Email is required');
+        res.status(400).json({ message: 'Email is required' });
+        return;
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-        res.status(404);
-        throw new Error('User not found');
+        res.status(404).json({ message: 'User not found' });
+        return;
     }
 
     res.status(200).json({ exists: true });

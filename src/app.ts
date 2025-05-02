@@ -20,13 +20,20 @@ connectDB();
 
 const port = process.env.PORT || 3005;
 
+const corsOptions = {
+    origin: 'http://localhost:3000', // Allow all domains
+    methods: 'GET,POST,PUT,DELETE', // Allowed methods
+    allowedHeaders: 'Content-Type,Authorization', // Allowed headers
+    credentials: true,    
+};
+
 const app = express();
 
 app.use(express.json());
 app.use(loggerMiddleware);
 app.use(morgan('dev'));
 app.use(cookieParser());
-app.use(cors());
+app.use(cors(corsOptions));
 
 export const myCache = new NodeCache();
 
