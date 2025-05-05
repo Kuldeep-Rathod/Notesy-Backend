@@ -21,10 +21,10 @@ connectDB();
 const port = process.env.PORT || 3005;
 
 const corsOptions = {
-    origin: 'http://localhost:3000', // Allow all domains
+    origin: ['http://localhost:3000', 'http://192.168.200.34:3000'], // Allow all domains
     methods: 'GET,POST,PUT,DELETE', // Allowed methods
     allowedHeaders: 'Content-Type,Authorization', // Allowed headers
-    credentials: true,    
+    credentials: true,
 };
 
 const app = express();

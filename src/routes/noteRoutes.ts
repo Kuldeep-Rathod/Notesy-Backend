@@ -13,8 +13,8 @@ const router = express.Router();
 
 router.use(isAuthenticated);
 router.post('/', createNote);
-router.get('/', getUserNotes);
 router.get('/bin', getTrashedNotes);
+router.get('/:firebaseUid', getUserNotes);
 router.put('/:id/bin', moveNoteToBin);
 router.put('/:id', updateNote);
 router.delete('/:id', deleteNote);

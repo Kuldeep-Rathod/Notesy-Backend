@@ -6,14 +6,14 @@ interface ChecklistItem {
 }
 
 export interface INote extends Document {
-    userId: mongoose.Types.ObjectId;
-    title?: string;
-    content?: string;
+    firebaseUid: string;
+    noteTitle?: string;
+    noteBody?: string;
     images?: { url: string; alt?: string }[];
     drawings?: { dataUrl: string; description?: string }[];
     audio?: { url?: string; transcription?: string };
     checklists?: ChecklistItem[];
-    color?: string;
+    bgColor?: string;
     labels?: string[];
     pinned?: boolean;
     reminder?: Date;
@@ -28,9 +28,9 @@ const checklistItemSchema = new Schema<ChecklistItem>({
 
 const noteSchema = new Schema<INote>(
     {
-        userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-        title: { type: String, default: '' },
-        content: { type: String, default: '' },
+        firebaseUid: { type: String, ref: 'User', required: true },
+        noteTitle: { type: String, default: '' },
+        noteBody: { type: String, default: '' },
         images: [{ url: String, alt: { type: String, default: '' } }],
         drawings: [
             { dataUrl: String, description: { type: String, default: '' } },
@@ -40,7 +40,7 @@ const noteSchema = new Schema<INote>(
             transcription: { type: String },
         },
         checklists: [checklistItemSchema],
-        color: { type: String, default: '#ffffff' },
+        bgColor: { type: String, default: '#ffffff' },
         labels: [{ type: String }],
         pinned: { type: Boolean, default: false },
         reminder: { type: Date },

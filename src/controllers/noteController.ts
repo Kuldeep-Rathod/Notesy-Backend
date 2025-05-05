@@ -6,7 +6,10 @@ import asyncHandler from 'express-async-handler';
 
 export const createNote = async (req: AuthRequest, res: Response) => {
     try {
-        const note = new Note({ ...req.body, userId: req.user!._id });
+        const note = new Note({
+            ...req.body,
+            firebaseUid: 'zBAZv6mvFwWMhZtkrigJ1BqKy0J3',
+        });
         await note.save();
         res.status(201).json(note);
     } catch (error: any) {
@@ -17,7 +20,7 @@ export const createNote = async (req: AuthRequest, res: Response) => {
 export const getUserNotes = async (req: AuthRequest, res: Response) => {
     try {
         const notes = await Note.find({
-            userId: req.user!._id,
+            firebaseUid: req.params.firebaseUid,
             trashed: false, // optionally exclude trashed notes
         }).sort({ createdAt: -1 });
         res.status(200).json(notes);

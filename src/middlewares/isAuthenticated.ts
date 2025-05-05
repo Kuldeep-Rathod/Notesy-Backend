@@ -1,10 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import mongoose from 'mongoose';
-import { IUser, User } from '../models/userModel.js';
+import admin from '../config/firebaseAdmin.js';
 
 export interface AuthRequest extends Request {
-    user?: IUser & { _id: mongoose.Types.ObjectId };
+    user?: admin.auth.DecodedIdToken;
 }
 
 export const isAuthenticated = async (
@@ -13,29 +11,18 @@ export const isAuthenticated = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const token = req.cookies.token;
+        const token = req.headers.authorization?.split('Bearer ')[1];
 
         if (!token) {
-            res.status(401).json({ message: 'Not authenticated' });
+            res.status(401).json({ message: 'No token provided' });
             return;
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
-            email: string;
-        };
-
-        const user = await User.findOne({ email: decoded.email }).select(
-            '-password'
-        );
-        if (!user) {
-            res.status(401).json({ message: 'User not found' });
-            return;
-        }
-
-        req.user = user;
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        req.user = decodedToken;
         next();
-    } catch (err) {
-        console.error('Auth Error:', err);
-        res.status(401).json({ message: 'Invalid or expired token' });
+    } catch (error) {
+        console.error('Firebase Auth Error:', error);
+        res.status(401).json({ message: 'Unauthorized' });
     }
 };
