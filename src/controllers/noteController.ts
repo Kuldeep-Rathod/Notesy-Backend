@@ -8,7 +8,7 @@ export const createNote = async (req: AuthRequest, res: Response) => {
     try {
         const note = new Note({
             ...req.body,
-            firebaseUid: 'zBAZv6mvFwWMhZtkrigJ1BqKy0J3',
+            firebaseUid: req.user!.uid,
         });
         await note.save();
         res.status(201).json(note);
@@ -20,8 +20,8 @@ export const createNote = async (req: AuthRequest, res: Response) => {
 export const getUserNotes = async (req: AuthRequest, res: Response) => {
     try {
         const notes = await Note.find({
-            firebaseUid: req.params.firebaseUid,
-            trashed: false, // optionally exclude trashed notes
+            firebaseUid: req.user!.uid,
+            trashed: false,
         }).sort({ createdAt: -1 });
         res.status(200).json(notes);
     } catch (error: any) {
@@ -32,8 +32,20 @@ export const getUserNotes = async (req: AuthRequest, res: Response) => {
 export const getTrashedNotes = async (req: AuthRequest, res: Response) => {
     try {
         const notes = await Note.find({
-            userId: req.user!._id,
+            firebaseUid: req.user!.uid,
             trashed: true,
+        }).sort({ createdAt: -1 });
+        res.status(200).json(notes);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getArchivedNotes = async (req: AuthRequest, res: Response) => {
+    try {
+        const notes = await Note.find({
+            firebaseUid: req.user!.uid,
+            archived: true,
         }).sort({ createdAt: -1 });
         res.status(200).json(notes);
     } catch (error: any) {
@@ -45,7 +57,7 @@ export const updateNote = asyncHandler(
     async (req: AuthRequest, res: Response): Promise<void> => {
         try {
             const note = await Note.findOneAndUpdate(
-                { _id: req.params.id, userId: req.user!._id },
+                { _id: req.params.id, firebaseUid: req.user!.uid },
                 req.body,
                 { new: true }
             );
@@ -66,7 +78,7 @@ export const moveNoteToBin = async (
 ): Promise<void> => {
     try {
         const note = await Note.findOneAndUpdate(
-            { _id: req.params.id, userId: req.user!._id },
+            { _id: req.params.id, firebaseUid: req.user!.uid },
             { trashed: true },
             { new: true }
         );
@@ -90,13 +102,36 @@ export const deleteNote = async (
     try {
         const note = await Note.findOneAndDelete({
             _id: req.params.id,
-            userId: req.user!._id,
+            firebaseUid: req.user!.uid,
         });
         if (!note) {
             res.status(404).json({ message: 'Note not found' });
             return;
         }
         res.status(200).json({ message: 'Note deleted successfully' });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const restoreNote = async (
+    req: AuthRequest,
+    res: Response
+): Promise<void> => {
+    try {
+        const note = await Note.findOneAndUpdate(
+            { _id: req.params.id, firebaseUid: req.user!.uid },
+            { trashed: false },
+            { new: true }
+        );
+        if (!note) {
+            res.status(404).json({ message: 'Note not found' });
+            return;
+        }
+        res.status(200).json({
+            message: 'Note Restored',
+            note,
+        });
     } catch (error: any) {
         res.status(500).json({ message: error.message });
     }

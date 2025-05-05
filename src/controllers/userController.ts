@@ -10,8 +10,8 @@ export const fetchUsers = asyncHandler(async (req: Request, res: Response) => {
 
 export const getUserProfile = asyncHandler(
     async (req: AuthRequest, res: Response) => {
-        const id = req.user?.id;
-        const user = await User.findById(id);
+        const firebaseUid = req.user?.firebaseUid;
+        const user = await User.findOne({ firebaseUid });
         res.json(user);
     }
 );

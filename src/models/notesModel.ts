@@ -9,8 +9,6 @@ export interface INote extends Document {
     firebaseUid: string;
     noteTitle?: string;
     noteBody?: string;
-    images?: { url: string; alt?: string }[];
-    drawings?: { dataUrl: string; description?: string }[];
     audio?: { url?: string; transcription?: string };
     checklists?: ChecklistItem[];
     bgColor?: string;
@@ -19,6 +17,9 @@ export interface INote extends Document {
     reminder?: Date;
     sharedWith?: mongoose.Types.ObjectId[];
     trashed?: boolean;
+    archived?: boolean;
+    bgImage?: string;
+    isCbox?: boolean;
 }
 
 const checklistItemSchema = new Schema<ChecklistItem>({
@@ -31,10 +32,6 @@ const noteSchema = new Schema<INote>(
         firebaseUid: { type: String, ref: 'User', required: true },
         noteTitle: { type: String, default: '' },
         noteBody: { type: String, default: '' },
-        images: [{ url: String, alt: { type: String, default: '' } }],
-        drawings: [
-            { dataUrl: String, description: { type: String, default: '' } },
-        ],
         audio: {
             url: { type: String },
             transcription: { type: String },
@@ -43,9 +40,12 @@ const noteSchema = new Schema<INote>(
         bgColor: { type: String, default: '#ffffff' },
         labels: [{ type: String }],
         pinned: { type: Boolean, default: false },
+        archived: { type: Boolean, default: false },
         reminder: { type: Date },
         sharedWith: [{ type: Schema.Types.ObjectId, ref: 'User' }],
         trashed: { type: Boolean, default: false },
+        bgImage: { type: String, default: '' },
+        isCbox: { type: Boolean, default: false },
     },
     { timestamps: true }
 );
