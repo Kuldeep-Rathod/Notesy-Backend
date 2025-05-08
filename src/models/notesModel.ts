@@ -15,7 +15,7 @@ export interface INote extends Document {
     labels?: string[];
     pinned?: boolean;
     reminder?: Date;
-    sharedWith?: mongoose.Types.ObjectId[];
+    sharedWith?: string[];
     trashed?: boolean;
     archived?: boolean;
     bgImage?: string;
@@ -42,7 +42,7 @@ const noteSchema = new Schema<INote>(
         pinned: { type: Boolean, default: false },
         archived: { type: Boolean, default: false },
         reminder: { type: Date },
-        sharedWith: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+        sharedWith: [{ type: String, ref: 'User' }],
         trashed: { type: Boolean, default: false },
         bgImage: { type: String, default: '' },
         isCbox: { type: Boolean, default: false },

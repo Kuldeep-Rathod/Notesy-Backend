@@ -7,7 +7,8 @@ import { User } from '../models/userModel.js';
 // GET /api/v1/labels
 export const getLabels = asyncHandler(
     async (req: AuthRequest, res: Response) => {
-        const user = await User.findById(req.user?._id);
+        const firebaseUid = req.user?.uid;
+        const user = await User.findOne({ firebaseUid });
         res.status(200).json(user?.labels || []);
     }
 );
@@ -16,7 +17,8 @@ export const getLabels = asyncHandler(
 export const addLabel = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         const { label } = req.body;
-        const user = await User.findById(req.user?._id);
+        const firebaseUid = req.user?.uid;
+        const user = await User.findOne({ firebaseUid });
         if (!user) throw new Error('User not found');
 
         if (!user.labels.includes(label)) {
@@ -32,7 +34,8 @@ export const addLabel = asyncHandler(
 export const editLabel = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         const { oldLabel, newLabel } = req.body;
-        const user = await User.findById(req.user?._id);
+        const firebaseUid = req.user?.uid;
+        const user = await User.findOne({ firebaseUid });
         if (!user) throw new Error('User not found');
 
         const index = user.labels.indexOf(oldLabel);
@@ -45,7 +48,7 @@ export const editLabel = asyncHandler(
         await user.save();
 
         await Note.updateMany(
-            { userId: req.user?._id, labels: oldLabel },
+            { firebaseUid: firebaseUid, labels: oldLabel },
             { $set: { 'labels.$': newLabel } }
         );
 
@@ -57,14 +60,15 @@ export const editLabel = asyncHandler(
 export const deleteLabel = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         const { label } = req.params;
-        const user = await User.findById(req.user?._id);
+        const firebaseUid = req.user?.uid;
+        const user = await User.findOne({ firebaseUid });
         if (!user) throw new Error('User not found');
 
         user.labels = user.labels.filter((l) => l !== label);
         await user.save();
 
         await Note.updateMany(
-            { userId: req.user?._id },
+            { firebaseUid: firebaseUid },
             { $pull: { labels: label } }
         );
 
@@ -76,6 +80,7 @@ export const deleteLabel = asyncHandler(
 export const attachLabelsToNote = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         let { labels } = req.body;
+        const firebaseUid = req.user?.uid;
 
         // Normalize to array if single string is provided
         if (typeof labels === 'string') {
@@ -91,14 +96,14 @@ export const attachLabelsToNote = asyncHandler(
 
         const note = await Note.findOne({
             _id: req.params.id,
-            userId: req.user?._id,
+            firebaseUid: firebaseUid,
         });
         if (!note) {
             res.status(404).json({ message: 'Note not found' });
             return;
         }
 
-        const user = await User.findById(req.user?._id);
+        const user = await User.findOne({ firebaseUid });
         if (!user) throw new Error('User not found');
 
         // Add missing labels to user's profile

@@ -1,6 +1,5 @@
 import { Response } from 'express';
 import asyncHandler from 'express-async-handler';
-import mongoose from 'mongoose';
 import { AuthRequest } from '../middlewares/isAuthenticated.js';
 import { Note } from '../models/notesModel.js';
 import { User } from '../models/userModel.js';
@@ -13,14 +12,14 @@ export const shareNote = asyncHandler(
             res.status(401).json({ error: 'Unauthorized: User not found' });
             return;
         }
-        const userId = req.user._id;
+        const firebaseUid = req.user.uid;
 
         const note = await Note.findById(noteId);
         if (!note) {
             res.status(404).json({ error: 'Note not found' });
             return;
         }
-        if (note.userId.toString() !== userId.toString()) {
+        if (note.firebaseUid.toString() !== firebaseUid.toString()) {
             res.status(403).json({ error: 'Unauthorized' });
             return;
         }
@@ -43,10 +42,8 @@ export const shareNote = asyncHandler(
         const currentShared = new Set(
             note.sharedWith.map((id) => id.toString())
         );
-        users.forEach((user) => currentShared.add(user._id.toString()));
-        note.sharedWith = Array.from(currentShared).map(
-            (id) => new mongoose.Types.ObjectId(id)
-        );
+        users.forEach((user) => currentShared.add(user.firebaseUid.toString()));
+        note.sharedWith = Array.from(currentShared).map((id) => id);
 
         const updatedNote = await note.save();
         res.status(200).json(updatedNote);
@@ -60,9 +57,9 @@ export const getNotesSharedWithMe = asyncHandler(
             res.status(401).json({ error: 'Unauthorized: User not found' });
             return;
         }
-        const userId = req.user._id;
+        const firebaseUid = req.user.uid;
         const notes = await Note.find({
-            sharedWith: userId,
+            sharedWith: firebaseUid,
             trashed: { $ne: true },
         });
         res.status(200).json(notes);
