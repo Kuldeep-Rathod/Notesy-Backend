@@ -14,13 +14,28 @@ export const shareNote = asyncHandler(
         }
         const firebaseUid = req.user.uid;
 
-        const note = await Note.findById(noteId);
-        if (!note) {
-            res.status(404).json({ error: 'Note not found' });
+        if (!noteId || !emails || !Array.isArray(emails)) {
+            res.status(400).json({
+                success: false,
+                message: 'Note ID and emails array are required',
+            });
             return;
         }
-        if (note.firebaseUid.toString() !== firebaseUid.toString()) {
-            res.status(403).json({ error: 'Unauthorized' });
+
+        const note = await Note.findById(noteId);
+        if (!note) {
+            res.status(404).json({
+                success: false,
+                message: 'Note not found',
+            });
+            return;
+        }
+        // Check if user is the owner
+        if (note.firebaseUid !== req.user.uid) {
+            res.status(403).json({
+                success: false,
+                message: 'Only note owner can share the note',
+            });
             return;
         }
         if (!note.sharedWith) note.sharedWith = [];
@@ -28,25 +43,26 @@ export const shareNote = asyncHandler(
         // Lookup users by email
         const users = await User.find({ email: { $in: emails } });
 
-        // Check for non-existent emails
-        const foundEmails = users.map((u) => u.email);
-        const notFound = emails.filter(
-            (email: string) => !foundEmails.includes(email)
-        );
-        if (notFound.length > 0) {
-            res.status(400).json({ error: 'Some emails not found', notFound });
+        if (users.length === 0) {
+            res.status(404).json({
+                success: false,
+                message: 'No users found with provided emails',
+            });
             return;
         }
 
-        // Merge userIds with existing sharedWith list
-        const currentShared = new Set(
-            note.sharedWith.map((id) => id.toString())
-        );
-        users.forEach((user) => currentShared.add(user.firebaseUid.toString()));
-        note.sharedWith = Array.from(currentShared).map((id) => id);
+        // Add users to sharedWith array (avoid duplicates)
+        const userUids: string[] = users.map((user) => user.firebaseUid);
+        note.sharedWith = [
+            ...new Set([...(note.sharedWith || []), ...userUids]),
+        ];
 
-        const updatedNote = await note.save();
-        res.status(200).json(updatedNote);
+        await note.save();
+        res.status(200).json({
+            success: true,
+            message: 'Note shared successfully',
+            sharedWith: note.sharedWith,
+        });
     }
 );
 
@@ -63,5 +79,143 @@ export const getNotesSharedWithMe = asyncHandler(
             trashed: { $ne: true },
         });
         res.status(200).json(notes);
+    }
+);
+
+// 2. Get list of collaborators for a note
+export const getCollaborators = asyncHandler(
+    async (req: AuthRequest, res: Response) => {
+        const { noteId } = req.params;
+
+        if (!req.user) {
+            res.status(401).json({ error: 'Unauthorized: User not found' });
+            return;
+        }
+
+        const note = await Note.findById(noteId);
+        if (!note) {
+            res.status(404).json({
+                success: false,
+                message: 'Note not found',
+            });
+            return;
+        }
+
+        if (
+            note.firebaseUid !== req.user.uid &&
+            !note.sharedWith?.includes(req.user.uid)
+        ) {
+            res.status(403).json({
+                success: false,
+                message: 'You do not have access to this note',
+            });
+            return;
+        }
+
+        const collaborators = await User.find({
+            uid: { $in: note.sharedWith },
+        }).select('uid email name');
+
+        res.status(200).json({
+            success: true,
+            collaborators,
+            ownerId: note.firebaseUid,
+        });
+        return;
+    }
+);
+
+// 3. Remove a collaborator from note
+export const removeCollaborator = asyncHandler(
+    async (req: AuthRequest, res: Response) => {
+        const { noteId, userId }: { noteId: string; userId: string } = req.body;
+
+        if (!req.user) {
+            res.status(401).json({ error: 'Unauthorized: User not found' });
+            return;
+        }
+
+        if (!noteId || !userId) {
+            res.status(400).json({
+                success: false,
+                message: 'Note ID and user ID are required',
+            });
+            return;
+        }
+
+        const note = await Note.findById(noteId);
+        if (!note) {
+            res.status(404).json({
+                success: false,
+                message: 'Note not found',
+            });
+            return;
+        }
+
+        if (note.firebaseUid !== req.user.uid) {
+            res.status(403).json({
+                success: false,
+                message: 'Only note owner can remove collaborators',
+            });
+            return;
+        }
+
+        if (!note.sharedWith?.includes(userId)) {
+            res.status(400).json({
+                success: false,
+                message: 'User is not a collaborator on this note',
+            });
+            return;
+        }
+
+        note.sharedWith = note.sharedWith.filter((uid) => uid !== userId);
+        await note.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Collaborator removed successfully',
+            sharedWith: note.sharedWith,
+        });
+        return;
+    }
+);
+
+// 4. Leave a shared note (for collaborators)
+export const leaveSharedNote = asyncHandler(
+    async (req: AuthRequest, res: Response) => {
+        const { noteId }: { noteId: string } = req.body;
+
+        if (!req.user) {
+            res.status(401).json({ error: 'Unauthorized: User not found' });
+            return;
+        }
+
+        const note = await Note.findById(noteId);
+        if (!note) {
+            res.status(404).json({
+                success: false,
+                message: 'Note not found',
+            });
+            return;
+        }
+
+        if (!note.sharedWith?.includes(req.user.uid)) {
+            res.status(400).json({
+                success: false,
+                message: 'You are not a collaborator on this note',
+            });
+            return;
+        }
+
+        note.sharedWith = note.sharedWith.filter(
+            (uid) => uid !== (req.user?.uid || '')
+        );
+        await note.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'You have successfully left the shared note',
+        });
+        return;
     }
 );

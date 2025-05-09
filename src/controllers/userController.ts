@@ -3,7 +3,7 @@ import asyncHandler from 'express-async-handler';
 import { AuthRequest } from '../middlewares/isAuthenticated.js';
 import { User } from '../models/userModel.js';
 
-export const fetchUsers = asyncHandler(async (req: Request, res: Response) => {
+export const fetchAllUsers = asyncHandler(async (req: Request, res: Response) => {
     const users = await User.find();
     res.json(users);
 });
