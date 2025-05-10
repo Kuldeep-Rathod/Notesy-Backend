@@ -10,7 +10,7 @@ const generateToken = (email: string) => {
 };
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-    const { email, name, firebaseUid } = req.body;
+    const { email, name, firebaseUid, photo } = req.body; // Add photo to destructuring
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -24,6 +24,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         email,
         name,
         firebaseUid,
+        photo, // Add photo field to user creation
         password: undefined, // No password stored in MongoDB
     });
 
@@ -47,6 +48,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
             name: user.name,
             email: user.email,
             firebaseUid: user.firebaseUid,
+            photo: user.photo, // Include photo in response
         },
     });
 });

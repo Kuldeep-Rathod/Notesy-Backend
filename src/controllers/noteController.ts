@@ -1,8 +1,7 @@
 import { Response } from 'express';
-import mongoose from 'mongoose';
-import { AuthRequest } from '../middlewares/isAuthenticated.js';
-import { INote, Note } from '../models/notesModel.js';
 import asyncHandler from 'express-async-handler';
+import { AuthRequest } from '../middlewares/isAuthenticated.js';
+import { Note } from '../models/notesModel.js';
 
 export const createNote = async (req: AuthRequest, res: Response) => {
     try {

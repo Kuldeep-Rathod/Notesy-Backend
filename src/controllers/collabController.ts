@@ -112,9 +112,10 @@ export const getCollaborators = asyncHandler(
             return;
         }
 
+        // Updated query to use firebaseUid instead of uid
         const collaborators = await User.find({
-            uid: { $in: note.sharedWith },
-        }).select('uid email name');
+            firebaseUid: { $in: note.sharedWith },
+        }).select('firebaseUid email name photo');
 
         res.status(200).json({
             success: true,
