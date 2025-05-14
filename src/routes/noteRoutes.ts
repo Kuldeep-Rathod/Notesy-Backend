@@ -17,6 +17,7 @@ import {
     removeCollaborator,
     leaveSharedNote,
 } from '../controllers/collabController.js';
+import { multipleUpload } from '../middlewares/multer.js';
 
 const router = express.Router();
 
@@ -25,8 +26,8 @@ router.use(isAuthenticated);
 
 // Notes routes
 router.get('/', getUserNotes);
-router.post('/', createNote);
-router.put('/:id', updateNote);
+router.post('/', multipleUpload, createNote);
+router.put('/:id', multipleUpload, updateNote);
 router.delete('/:id', deleteNote);
 router.put('/:id/trash', moveNoteToBin);
 router.put('/:id/restore', restoreNote);

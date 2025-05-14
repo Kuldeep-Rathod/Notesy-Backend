@@ -19,6 +19,7 @@ export interface INote extends Document {
     trashed?: boolean;
     archived?: boolean;
     bgImage?: string;
+    images: string[];
     isCbox?: boolean;
 }
 
@@ -45,6 +46,7 @@ const noteSchema = new Schema<INote>(
         sharedWith: [{ type: String }],
         trashed: { type: Boolean, default: false },
         bgImage: { type: String, default: '' },
+        images: [{ type: String }],
         isCbox: { type: Boolean, default: false },
     },
     { timestamps: true }

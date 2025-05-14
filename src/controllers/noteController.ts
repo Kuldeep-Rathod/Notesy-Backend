@@ -2,6 +2,8 @@ import { Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import { AuthRequest } from '../middlewares/isAuthenticated.js';
 import { Note } from '../models/notesModel.js';
+import cloudinary from '../config/cloudinary.js';
+import fs from 'fs';
 
 export const createNote = async (req: AuthRequest, res: Response) => {
     try {
@@ -9,10 +11,36 @@ export const createNote = async (req: AuthRequest, res: Response) => {
             ...req.body,
             firebaseUid: req.user!.uid,
         });
+
+        if (Array.isArray(req.files) && req.files.length > 0) {
+            const images = req.files as Express.Multer.File[];
+
+            console.log('Images:', images);
+
+            // Upload images to Cloudinary
+            const imageUploadResults = await Promise.all(
+                images.map((image) =>
+                    cloudinary.uploader.upload(image.path, {
+                        folder: 'uploads',
+                        resource_type: 'auto',
+                    })
+                )
+            );
+
+            // Store uploaded image URLs in the note
+            note.images = imageUploadResults.map((result) => result.secure_url);
+
+            // Clean up local files
+            images.forEach((image) => fs.unlinkSync(image.path));
+        }
+
         await note.save();
         res.status(201).json(note);
     } catch (error: any) {
-        res.status(500).json({ message: error.message });
+        console.error('Error creating note:', error);
+        res.status(500).json({
+            message: error.message || 'Something went wrong.',
+        });
     }
 };
 
@@ -68,14 +96,11 @@ export const updateNote = asyncHandler(
         try {
             const userId = req.user!.uid;
 
-            const note = await Note.findOneAndUpdate(
-                {
-                    _id: req.params.id,
-                    $or: [{ firebaseUid: userId }, { sharedWith: userId }],
-                },
-                req.body,
-                { new: true }
-            ).populate('collaborators');
+            // Find the note first
+            const note = await Note.findOne({
+                _id: req.params.id,
+                $or: [{ firebaseUid: userId }, { sharedWith: userId }],
+            });
 
             if (!note) {
                 res.status(404).json({
@@ -84,8 +109,45 @@ export const updateNote = asyncHandler(
                 return;
             }
 
-            res.status(200).json(note);
+            // Handle new image uploads
+            let newImageUrls: string[] = [];
+
+            if (Array.isArray(req.files) && req.files.length > 0) {
+                const images = req.files as Express.Multer.File[];
+
+                const uploadResults = await Promise.all(
+                    images.map((image) =>
+                        cloudinary.uploader.upload(image.path, {
+                            folder: 'uploads',
+                            resource_type: 'auto',
+                        })
+                    )
+                );
+
+                newImageUrls = uploadResults.map((result) => result.secure_url);
+
+                // Cleanup local temp files
+                images.forEach((image) => fs.unlinkSync(image.path));
+            }
+
+            // Merge new data with old images
+            const updatedData = {
+                ...req.body,
+                images: [...(note.images || []), ...newImageUrls],
+            };
+
+            // Update the note
+            const updatedNote = await Note.findByIdAndUpdate(
+                note._id,
+                updatedData,
+                {
+                    new: true,
+                }
+            ).populate('collaborators');
+
+            res.status(200).json(updatedNote);
         } catch (error: any) {
+            console.error('Update note error:', error);
             res.status(500).json({ message: error.message });
         }
     }
@@ -121,7 +183,7 @@ export const deleteNote = async (
     res: Response
 ): Promise<void> => {
     try {
-        const note = await Note.findOneAndDelete({
+        const note = await Note.findOne({
             _id: req.params.id,
             firebaseUid: req.user!.uid,
         });
@@ -131,8 +193,32 @@ export const deleteNote = async (
             return;
         }
 
-        res.status(200).json({ message: 'Note deleted successfully' });
+        // Delete all images from Cloudinary
+        if (Array.isArray(note.images) && note.images.length > 0) {
+            const deletePromises = note.images.map((url) => {
+                // Extract public ID from URL (e.g., uploads/filename)
+                const publicId = url
+                    .split('/')
+                    .slice(-2)
+                    .join('/')
+                    .split('.')[0]; // remove extension
+
+                return cloudinary.uploader.destroy(publicId, {
+                    resource_type: 'image',
+                });
+            });
+
+            await Promise.all(deletePromises);
+        }
+
+        // Delete the note itself
+        await Note.deleteOne({ _id: note._id });
+
+        res.status(200).json({
+            message: 'Note and associated images deleted successfully',
+        });
     } catch (error: any) {
+        console.error('Delete note error:', error);
         res.status(500).json({ message: error.message });
     }
 };
