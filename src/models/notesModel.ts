@@ -29,7 +29,7 @@ const checklistItemSchema = new Schema<ChecklistItem>({
 
 const noteSchema = new Schema<INote>(
     {
-        firebaseUid: { type: String, ref: 'User', required: true },
+        firebaseUid: { type: String, required: true },
         noteTitle: { type: String, default: '' },
         noteBody: { type: String, default: '' },
         audio: {
@@ -42,12 +42,24 @@ const noteSchema = new Schema<INote>(
         pinned: { type: Boolean, default: false },
         archived: { type: Boolean, default: false },
         reminder: { type: Date },
-        sharedWith: [{ type: String, ref: 'User' }],
+        sharedWith: [{ type: String }],
         trashed: { type: Boolean, default: false },
         bgImage: { type: String, default: '' },
         isCbox: { type: Boolean, default: false },
     },
     { timestamps: true }
 );
+
+// Virtual to populate user info from User model using firebaseUid
+noteSchema.virtual('collaborators', {
+    ref: 'User',
+    localField: 'sharedWith',
+    foreignField: 'firebaseUid',
+    justOne: false,
+});
+
+// Enable virtuals when converting to JSON or Object
+noteSchema.set('toObject', { virtuals: true });
+noteSchema.set('toJSON', { virtuals: true });
 
 export const Note = mongoose.model<INote>('Note', noteSchema);
