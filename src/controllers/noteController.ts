@@ -7,17 +7,31 @@ import fs from 'fs';
 
 export const createNote = async (req: AuthRequest, res: Response) => {
     try {
+        //Parse checklists from JSON string if needed
+        if (typeof req.body.checklists === 'string') {
+            try {
+                req.body.checklists = JSON.parse(req.body.checklists);
+            } catch (err) {
+                return res.status(400).json({
+                    message: 'Invalid checklists format. Must be JSON.',
+                });
+            }
+        }
+
+        // If you also have labels or other arrays as strings, do the same:
+        if (typeof req.body.labels === 'string') {
+            req.body.labels = JSON.parse(req.body.labels);
+        }
+
         const note = new Note({
             ...req.body,
             firebaseUid: req.user!.uid,
         });
 
+        //Handle images
         if (Array.isArray(req.files) && req.files.length > 0) {
             const images = req.files as Express.Multer.File[];
 
-            console.log('Images:', images);
-
-            // Upload images to Cloudinary
             const imageUploadResults = await Promise.all(
                 images.map((image) =>
                     cloudinary.uploader.upload(image.path, {
@@ -27,10 +41,8 @@ export const createNote = async (req: AuthRequest, res: Response) => {
                 )
             );
 
-            // Store uploaded image URLs in the note
             note.images = imageUploadResults.map((result) => result.secure_url);
 
-            // Clean up local files
             images.forEach((image) => fs.unlinkSync(image.path));
         }
 
@@ -95,6 +107,22 @@ export const updateNote = asyncHandler(
     async (req: AuthRequest, res: Response): Promise<void> => {
         try {
             const userId = req.user!.uid;
+
+            if (typeof req.body.checklists === 'string') {
+                try {
+                    req.body.checklists = JSON.parse(req.body.checklists);
+                } catch (err) {
+                    res.status(400).json({
+                        message: 'Invalid checklists format. Must be JSON.',
+                    });
+                    return;
+                }
+            }
+
+            // If you also have labels or other arrays as strings, do the same:
+            if (typeof req.body.labels === 'string') {
+                req.body.labels = JSON.parse(req.body.labels);
+            }
 
             // Find the note first
             const note = await Note.findOne({
