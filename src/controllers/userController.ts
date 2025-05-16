@@ -77,3 +77,36 @@ export const updateUserProfile = asyncHandler(
         res.json(updatedUser);
     }
 );
+
+export const deleteUserProfile = asyncHandler(
+    async (req: AuthRequest, res: Response) => {
+        const firebaseUid = req.user?.uid;
+
+        console.log('Firebase UID:', firebaseUid);
+        const user = await User.findOne({ firebaseUid });
+
+        if (!user) {
+            res.status(404);
+            throw new Error('User not found');
+        }
+
+        // Delete profile photo from Cloudinary if it exists
+        if (user.photo && user.photo.includes('res.cloudinary.com')) {
+            try {
+                const parts = user.photo.split('/');
+                const publicIdWithExtension = parts.slice(-1)[0];
+                const publicId = publicIdWithExtension.split('.')[0];
+                const folder = parts[parts.length - 2];
+                const cloudinaryPublicId = `${folder}/${publicId}`;
+
+                await cloudinary.uploader.destroy(cloudinaryPublicId);
+            } catch (error) {
+                console.error('Error deleting image from Cloudinary:', error);
+            }
+        }
+
+        await User.deleteOne({ firebaseUid });
+
+        res.json({ message: 'User deleted successfully' });
+    }
+);

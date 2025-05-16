@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+    deleteUserProfile,
     fetchAllUsers,
     getUserProfile,
     updateUserProfile,
@@ -9,8 +10,12 @@ import { singleUpload } from '../middlewares/multer.js';
 
 const router = Router();
 
-router.get('/me', isAuthenticated, getUserProfile);
-router.put('/profile', isAuthenticated, singleUpload, updateUserProfile);
-router.get('/', isAuthenticated, fetchAllUsers);
+// Protect all routes
+router.use(isAuthenticated);
+
+router.get('/me', getUserProfile);
+router.delete('/me', deleteUserProfile);
+router.put('/profile', singleUpload, updateUserProfile);
+router.get('/', fetchAllUsers);
 
 export default router;
