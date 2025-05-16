@@ -7,18 +7,17 @@ import fs from 'fs';
 
 export const createNote = async (req: AuthRequest, res: Response) => {
     try {
-        //Parse checklists from JSON string if needed
         if (typeof req.body.checklists === 'string') {
             try {
                 req.body.checklists = JSON.parse(req.body.checklists);
             } catch (err) {
-                return res.status(400).json({
+                res.status(400).json({
                     message: 'Invalid checklists format. Must be JSON.',
                 });
+                return;
             }
         }
 
-        // If you also have labels or other arrays as strings, do the same:
         if (typeof req.body.labels === 'string') {
             req.body.labels = JSON.parse(req.body.labels);
         }
@@ -28,7 +27,6 @@ export const createNote = async (req: AuthRequest, res: Response) => {
             firebaseUid: req.user!.uid,
         });
 
-        //Handle images
         if (Array.isArray(req.files) && req.files.length > 0) {
             const images = req.files as Express.Multer.File[];
 
@@ -61,7 +59,6 @@ export const getUserNotes = async (req: AuthRequest, res: Response) => {
         const userId = req.user!.uid;
 
         const notes = await Note.find({
-            trashed: false,
             $or: [{ firebaseUid: userId }, { sharedWith: userId }],
         })
             .sort({ createdAt: -1 })
@@ -119,12 +116,10 @@ export const updateNote = asyncHandler(
                 }
             }
 
-            // If you also have labels or other arrays as strings, do the same:
             if (typeof req.body.labels === 'string') {
                 req.body.labels = JSON.parse(req.body.labels);
             }
 
-            // Find the note first
             const note = await Note.findOne({
                 _id: req.params.id,
                 $or: [{ firebaseUid: userId }, { sharedWith: userId }],
@@ -137,7 +132,6 @@ export const updateNote = asyncHandler(
                 return;
             }
 
-            // Handle new image uploads
             let newImageUrls: string[] = [];
 
             if (Array.isArray(req.files) && req.files.length > 0) {
@@ -154,17 +148,14 @@ export const updateNote = asyncHandler(
 
                 newImageUrls = uploadResults.map((result) => result.secure_url);
 
-                // Cleanup local temp files
                 images.forEach((image) => fs.unlinkSync(image.path));
             }
 
-            // Merge new data with old images
             const updatedData = {
                 ...req.body,
                 images: [...(note.images || []), ...newImageUrls],
             };
 
-            // Update the note
             const updatedNote = await Note.findByIdAndUpdate(
                 note._id,
                 updatedData,
@@ -221,10 +212,8 @@ export const deleteNote = async (
             return;
         }
 
-        // Delete all images from Cloudinary
         if (Array.isArray(note.images) && note.images.length > 0) {
             const deletePromises = note.images.map((url) => {
-                // Extract public ID from URL (e.g., uploads/filename)
                 const publicId = url
                     .split('/')
                     .slice(-2)
@@ -239,7 +228,6 @@ export const deleteNote = async (
             await Promise.all(deletePromises);
         }
 
-        // Delete the note itself
         await Note.deleteOne({ _id: note._id });
 
         res.status(200).json({
