@@ -10,10 +10,10 @@ import loggerMiddleware from './middlewares/loggerMiddleware.js';
 
 //importing routes
 import authRoutes from './routes/authRoutes.js';
-import userRoutes from './routes/userRoutes.js';
-import noteRoutes from './routes/noteRoutes.js';
 import labelRoutes from './routes/labelRoutes.js';
-import collabRoutes from './routes/collabRoutes.js';
+import noteRoutes from './routes/noteRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -29,6 +29,12 @@ const corsOptions = {
 
 const app = express();
 
+// app.post(
+//     '/api/payments',
+//     bodyParser.raw({ type: 'application/json' }),
+//     handleStripeWebhook
+// );
+
 app.use(express.json());
 app.use(loggerMiddleware);
 app.use(morgan('dev'));
@@ -40,6 +46,10 @@ export const myCache = new NodeCache();
 app.get('/', (req, res) => {
     res.send(`Server is running on http://localhost:${port}`);
 });
+
+// Payment routes
+
+app.use('/api/v1/pay', paymentRoutes);
 
 // using routes
 app.use('/api/v1/auth', authRoutes);

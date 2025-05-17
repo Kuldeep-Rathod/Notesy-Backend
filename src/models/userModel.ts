@@ -11,6 +11,10 @@ export interface IUser extends Document {
     firebaseUid: string;
     labels: string[];
     photo: string;
+    stripeSubscriptionId?: string;
+    isPremium?: boolean;
+    planType?: 'monthly' | 'quarterly' | 'biannual' | 'annual';
+    premiumExpiresAt?: Date | null;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -46,6 +50,23 @@ const userSchema: Schema<IUser> = new Schema(
 
         photo: {
             type: String,
+            default: null,
+        },
+        stripeSubscriptionId: {
+            type: String,
+            default: '',
+        },
+        isPremium: {
+            type: Boolean,
+            default: false,
+        },
+        planType: {
+            type: String,
+            enum: ['monthly', 'quarterly', 'biannual', 'annual'],
+            default: undefined,
+        },
+        premiumExpiresAt: {
+            type: Date,
             default: null,
         },
     },
