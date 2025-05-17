@@ -31,8 +31,6 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
     // Generate JWT token for your backend API
     const token = generateToken(user.email);
 
-    console.log('tokenn', token);
-
     res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

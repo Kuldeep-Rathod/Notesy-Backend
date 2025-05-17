@@ -18,6 +18,8 @@ export const createCheckoutSession = async (
             return res.status(401).send('User not authenticated');
         }
 
+        const user = await User.findOne({ firebaseUid: userId });
+
         const { planType } = req.body;
 
         const priceId =
@@ -33,6 +35,7 @@ export const createCheckoutSession = async (
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
+            customer_email: user?.email,
             line_items: [
                 {
                     price: priceId,
@@ -61,7 +64,7 @@ export const createPortalSession = async (
 ): Promise<any> => {
     try {
         const userId = req.user?.uid;
-        const user = await User.findById(userId);
+        const user = await User.findOne({ firebaseUid: userId });
 
         if (!user || !user.stripeSubscriptionId) {
             return res
@@ -93,8 +96,6 @@ export const handleStripeWebhook = async (
     req: Request,
     res: Response
 ): Promise<any> => {
-    console.log('Webhook route hit');
-
     const sig = req.headers['stripe-signature'];
     let event: Stripe.Event;
 
