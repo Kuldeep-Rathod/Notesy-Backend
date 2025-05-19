@@ -1,6 +1,6 @@
-import { Response } from "express";
-import { AuthRequest } from "../middlewares/isAuthenticated.js";
-import { Note } from "../models/notesModel.js";
+import { Response } from 'express';
+import { AuthRequest } from '../middlewares/isAuthenticated.js';
+import { Note } from '../models/notesModel.js';
 
 export const getNoteStats = async (req: AuthRequest, res: Response) => {
     const firebaseUid = req.user?.uid;
@@ -17,6 +17,13 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
         let reminderCount = 0;
         let sharedNotes = 0;
         let bgColorMap: { [key: string]: number } = {};
+
+        const reminderStats = {
+            upcoming: 0,
+            past: 0,
+        };
+
+        const now = new Date();
 
         notes.forEach((note) => {
             // Checklist
@@ -37,10 +44,19 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
             if (note.trashed) trashed++;
 
             // Reminder
-            if (note.reminder) reminderCount++;
+            if (note.reminder) {
+                reminderCount++;
+
+                const reminderDate = new Date(note.reminder);
+                if (reminderDate >= now) {
+                    reminderStats.upcoming++;
+                } else {
+                    reminderStats.past++;
+                }
+            }
 
             // Sharing
-            if (note.sharedWith && note.sharedWith.length > 1) sharedNotes++; // >1 means shared with others
+            if (note.sharedWith && note.sharedWith.length > 1) sharedNotes++;
 
             // Background color
             if (note.bgColor) {
@@ -56,16 +72,17 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
             archived,
             trashed,
             reminderCount,
+            reminderStats,
             sharedNotes,
             bgColorStats: bgColorMap,
         };
 
         res.status(200).json({ success: true, data: stats });
     } catch (err) {
-        console.error("Error fetching note stats:", err);
+        console.error('Error fetching note stats:', err);
         res.status(500).json({
             success: false,
-            message: "Internal Server Error",
+            message: 'Internal Server Error',
         });
     }
 };
