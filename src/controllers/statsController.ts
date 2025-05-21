@@ -44,7 +44,7 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
             if (note.trashed) trashed++;
 
             // Reminder
-            if (note.reminder) {
+            if (note.reminder && !note.trashed && !note.archived) {
                 reminderCount++;
 
                 const reminderDate = new Date(note.reminder);
