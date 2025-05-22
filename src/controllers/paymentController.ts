@@ -26,12 +26,12 @@ export const createCheckoutSession = async (
             planType === 'monthly'
                 ? process.env.STRIPE_PRICE_ID_ONE_MONTH
                 : planType === 'quarterly'
-                ? process.env.STRIPE_PRICE_ID_THREE_MONTH
-                : planType === 'biannual'
-                ? process.env.STRIPE_PRICE_ID_SIX_MONTH
-                : planType === 'annual'
-                ? process.env.STRIPE_PRICE_ID_TWELVE_MONTH
-                : undefined;
+                  ? process.env.STRIPE_PRICE_ID_THREE_MONTH
+                  : planType === 'biannual'
+                    ? process.env.STRIPE_PRICE_ID_SIX_MONTH
+                    : planType === 'annual'
+                      ? process.env.STRIPE_PRICE_ID_TWELVE_MONTH
+                      : undefined;
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -131,9 +131,8 @@ export const handleStripeWebhook = async (
 
             console.log(`Processing premium upgrade for: ${email}`);
 
-            const subscription = await stripe.subscriptions.retrieve(
-                subscriptionId
-            );
+            const subscription =
+                await stripe.subscriptions.retrieve(subscriptionId);
 
             const user = await User.findOne({ email });
 

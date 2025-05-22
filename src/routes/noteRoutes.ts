@@ -3,6 +3,7 @@ import { isAuthenticated } from '../middlewares/isAuthenticated.js';
 import {
     createNote,
     deleteNote,
+    deleteSingleImage,
     getArchivedNotes,
     getTrashedNotes,
     getUserNotes,
@@ -27,6 +28,7 @@ router.use(isAuthenticated);
 // Notes routes
 router.get('/', getUserNotes);
 router.post('/', multipleUpload, createNote);
+router.delete('/image/:noteId', deleteSingleImage);
 router.put('/:id', multipleUpload, updateNote);
 router.delete('/:id', deleteNote);
 router.put('/:id/trash', moveNoteToBin);

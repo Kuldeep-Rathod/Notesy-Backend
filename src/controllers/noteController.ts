@@ -172,6 +172,59 @@ export const updateNote = asyncHandler(
     }
 );
 
+export const deleteSingleImage = asyncHandler(
+    async (req: AuthRequest, res: Response): Promise<void> => {
+        try {
+            const userId = req.user!.uid;
+            const { noteId } = req.params;
+            const imageUrl = decodeURIComponent(req.query.imageUrl as string);
+
+            console.log('Decoded imageUrl:', imageUrl);
+
+            // Find the note and verify ownership
+            const note = await Note.findOne({
+                _id: noteId,
+                $or: [{ firebaseUid: userId }, { sharedWith: userId }],
+            });
+
+            if (!note) {
+                res.status(404).json({
+                    message: 'Note not found or unauthorized',
+                });
+                return;
+            }
+
+            if (!note.images || !note.images.includes(imageUrl)) {
+                res.status(404).json({
+                    message: 'Image not found in this note',
+                });
+                return;
+            }
+
+            const publicId = imageUrl
+                .split('/')
+                .slice(-2)
+                .join('/')
+                .split('.')[0]; // remove extension
+
+            await cloudinary.uploader.destroy(publicId, {
+                resource_type: 'image',
+            });
+
+            note.images = note.images.filter((img) => img !== imageUrl);
+            await note.save();
+
+            res.status(200).json({
+                message: 'Image deleted successfully',
+                note: await Note.findById(noteId).populate('collaborators'),
+            });
+        } catch (error: any) {
+            console.error('Delete single image error:', error);
+            res.status(500).json({ message: error.message });
+        }
+    }
+);
+
 export const moveNoteToBin = async (
     req: AuthRequest,
     res: Response
