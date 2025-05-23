@@ -149,9 +149,10 @@ export const scheduleReminders = async (req: Request, res: Response) => {
         });
 
         if (!notes.length) {
-            return res.status(200).json({
+            res.status(200).json({
                 message: 'No notes with upcoming reminders.',
             });
+            return;
         }
 
         notes.forEach((note) => {
