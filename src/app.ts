@@ -1,3 +1,4 @@
+import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -5,20 +6,20 @@ import express from 'express';
 import morgan from 'morgan';
 import NodeCache from 'node-cache';
 import { connectDB } from './config/db.js';
+import { handleStripeWebhook } from './controllers/paymentController.js';
+import { scheduleFreeTrialCheck } from './jobs/freeTrialCheck.js';
 import { errorMiddleware } from './middlewares/error.js';
 import loggerMiddleware from './middlewares/loggerMiddleware.js';
-import { scheduleFreeTrialCheck } from './jobs/freeTrialCheck.js';
 
 //importing routes
 import authRoutes from './routes/authRoutes.js';
+import boardRoutes from './routes/boardRoutes.js';
 import labelRoutes from './routes/labelRoutes.js';
 import noteRoutes from './routes/noteRoutes.js';
-import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import reminderRoutes from './routes/reminderRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
-import bodyParser from 'body-parser';
-import { handleStripeWebhook } from './controllers/paymentController.js';
+import userRoutes from './routes/userRoutes.js';
 
 dotenv.config();
 connectDB();
@@ -68,6 +69,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/notes', noteRoutes);
 app.use('/api/v1/labels', labelRoutes);
+app.use('/api/v1/boards', boardRoutes);
 
 app.use('/uploads', express.static('uploads'));
 app.use(errorMiddleware);
