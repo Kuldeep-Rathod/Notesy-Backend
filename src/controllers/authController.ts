@@ -10,7 +10,7 @@ const generateToken = (email: string) => {
 };
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-    const { email, name, firebaseUid, photo } = req.body; // Add photo to destructuring
+    const { email, name, firebaseUid, photo } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -19,13 +19,22 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
         throw new Error('User already exists');
     }
 
+    // Set free trial dates
+    const freeTrialStartDate = new Date();
+    const freeTrialEndDate = new Date();
+    freeTrialEndDate.setDate(freeTrialEndDate.getDate() + 7); // Add 7 days
+
     // Create new user without password (since auth is handled by Firebase)
     const user = await User.create({
         email,
         name,
         firebaseUid,
-        photo, // Add photo field to user creation
-        password: undefined, // No password stored in MongoDB
+        photo,
+        password: undefined,
+        freeTrialStartDate,
+        freeTrialEndDate,
+        isInFreeTrial: true,
+        isPremium: true // Set to true during free trial period
     });
 
     // Generate JWT token for your backend API
@@ -46,7 +55,9 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
             name: user.name,
             email: user.email,
             firebaseUid: user.firebaseUid,
-            photo: user.photo, // Include photo in response
+            photo: user.photo,
+            isInFreeTrial: user.isInFreeTrial,
+            freeTrialEndDate: user.freeTrialEndDate
         },
     });
 });

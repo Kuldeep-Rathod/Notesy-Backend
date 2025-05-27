@@ -7,6 +7,7 @@ import NodeCache from 'node-cache';
 import { connectDB } from './config/db.js';
 import { errorMiddleware } from './middlewares/error.js';
 import loggerMiddleware from './middlewares/loggerMiddleware.js';
+import { scheduleFreeTrialCheck } from './jobs/freeTrialCheck.js';
 
 //importing routes
 import authRoutes from './routes/authRoutes.js';
@@ -21,6 +22,9 @@ import { handleStripeWebhook } from './controllers/paymentController.js';
 
 dotenv.config();
 connectDB();
+
+// Initialize the free trial check job
+scheduleFreeTrialCheck();
 
 const port = process.env.PORT || 3005;
 

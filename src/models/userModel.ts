@@ -15,6 +15,9 @@ export interface IUser extends Document {
     isPremium?: boolean;
     planType?: 'monthly' | 'quarterly' | 'biannual' | 'annual';
     premiumExpiresAt?: Date | null;
+    freeTrialStartDate?: Date;
+    freeTrialEndDate?: Date;
+    isInFreeTrial?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -69,6 +72,18 @@ const userSchema: Schema<IUser> = new Schema(
             type: Date,
             default: null,
         },
+        freeTrialStartDate: {
+            type: Date,
+            default: null,
+        },
+        freeTrialEndDate: {
+            type: Date,
+            default: null,
+        },
+        isInFreeTrial: {
+            type: Boolean,
+            default: false,
+        }
     },
     {
         timestamps: true,

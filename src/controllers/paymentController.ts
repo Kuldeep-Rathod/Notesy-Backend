@@ -142,6 +142,7 @@ export const handleStripeWebhook = async (
             }
 
             user.isPremium = true;
+            user.isInFreeTrial = false;
             user.stripeSubscriptionId = subscription.id;
             user.planType = planType as
                 | 'monthly'
