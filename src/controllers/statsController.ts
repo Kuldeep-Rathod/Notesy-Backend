@@ -1,12 +1,22 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middlewares/isAuthenticated.js';
 import { Note } from '../models/notesModel.js';
+import { User } from '../models/userModel.js';
 
 export const getNoteStats = async (req: AuthRequest, res: Response) => {
     const firebaseUid = req.user?.uid;
 
     try {
-        const notes = await Note.find({ firebaseUid });
+        const [notes, user] = await Promise.all([
+            Note.find({ firebaseUid }),
+            User.findOne({ firebaseUid }),
+        ]);
+
+        if (!user) {
+            return res
+                .status(404)
+                .json({ success: false, message: 'User not found' });
+        }
 
         let totalNotes = notes.length;
         let checklistStats = { completed: 0, incomplete: 0 };
@@ -17,25 +27,28 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
         let reminderCount = 0;
         let sharedNotes = 0;
         let bgColorMap: { [key: string]: number } = {};
-
-        const reminderStats = {
-            upcoming: 0,
-            past: 0,
-        };
-
+        const reminderStats = { upcoming: 0, past: 0 };
         const now = new Date();
+        const monthWiseStats: number[] = Array(12).fill(0);
+
+        // Initialize labelMap with all user-defined labels (count starts at 0)
+        user.labels.forEach((label) => {
+            labelMap[label] = 0;
+        });
 
         notes.forEach((note) => {
-            // Checklist
+            // Checklist stats
             note.checklists?.forEach((item) => {
                 item.checked
                     ? checklistStats.completed++
                     : checklistStats.incomplete++;
             });
 
-            // Labels
+            // Count only labels that exist in user's label list
             note.labels?.forEach((label) => {
-                labelMap[label] = (labelMap[label] || 0) + 1;
+                if (labelMap[label] !== undefined) {
+                    labelMap[label]++;
+                }
             });
 
             // Status flags
@@ -43,24 +56,27 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
             if (note.archived) archived++;
             if (note.trashed) trashed++;
 
-            // Reminder
+            // Reminders
             if (note.reminder && !note.trashed && !note.archived) {
                 reminderCount++;
-
                 const reminderDate = new Date(note.reminder);
-                if (reminderDate >= now) {
-                    reminderStats.upcoming++;
-                } else {
-                    reminderStats.past++;
-                }
+                reminderDate >= now
+                    ? reminderStats.upcoming++
+                    : reminderStats.past++;
             }
 
-            // Sharing
+            // Shared notes
             if (note.sharedWith && note.sharedWith.length > 1) sharedNotes++;
 
             // Background color
             if (note.bgColor) {
                 bgColorMap[note.bgColor] = (bgColorMap[note.bgColor] || 0) + 1;
+            }
+
+            // Monthly stats
+            if (note.createdAt) {
+                const createdMonth = new Date(note.createdAt).getMonth();
+                monthWiseStats[createdMonth]++;
             }
         });
 
@@ -75,6 +91,23 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
             reminderStats,
             sharedNotes,
             bgColorStats: bgColorMap,
+            monthlyNoteStats: {
+                labels: [
+                    'Jan',
+                    'Feb',
+                    'Mar',
+                    'Apr',
+                    'May',
+                    'Jun',
+                    'Jul',
+                    'Aug',
+                    'Sep',
+                    'Oct',
+                    'Nov',
+                    'Dec',
+                ],
+                data: monthWiseStats,
+            },
         };
 
         res.status(200).json({ success: true, data: stats });

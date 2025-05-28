@@ -299,7 +299,7 @@ export const restoreNote = async (
     try {
         const note = await Note.findOneAndUpdate(
             { _id: req.params.id, firebaseUid: req.user!.uid },
-            { trashed: false },
+            { trashed: false, archived: false, pinned: false },
             { new: true }
         ).populate('collaborators');
 

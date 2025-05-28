@@ -21,6 +21,8 @@ export interface INote extends Document {
     bgImage?: string;
     images: string[];
     isCbox?: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 const checklistItemSchema = new Schema<ChecklistItem>({
