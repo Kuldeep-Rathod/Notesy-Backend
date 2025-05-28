@@ -1,30 +1,45 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../middlewares/isAuthenticated.js';
 import { Board } from '../models/boardModel.js';
 
-export const createBoard = async (req: Request, res: Response) => {
+export const createBoard = async (req: AuthRequest, res: Response) => {
     try {
         const { title, data } = req.body;
-        const board = await Board.create({ title, data });
+        const firebaseUid = req.user?.uid;
+
+        const board = await Board.create({
+            title,
+            data,
+            firebaseUid,
+        });
         res.status(201).json(board);
     } catch (err) {
         res.status(500).json({ error: (err as Error).message });
     }
 };
 
-export const getBoards = async (_req: Request, res: Response) => {
+export const getBoards = async (req: AuthRequest, res: Response) => {
     try {
-        const boards = await Board.find().sort({ createdAt: -1 });
+        const firebaseUid = req.user!.uid;
+
+        const boards = await Board.find({ firebaseUid }).sort({
+            createdAt: -1,
+        });
         res.json(boards);
     } catch (err) {
         res.status(500).json({ error: (err as Error).message });
     }
 };
 
-export const getBoardById = async (req: Request, res: Response) => {
+export const getBoardById = async (req: AuthRequest, res: Response) => {
     try {
-        const board = await Board.findById(req.params.id);
+        const firebaseUid = req.user!.uid;
+
+        const board = await Board.findOne({ _id: req.params.id, firebaseUid });
         if (!board) {
-            res.status(404).json({ message: 'Board not found' });
+            res.status(404).json({
+                message: 'Board not found or unauthorized',
+            });
             return;
         }
         res.json(board);
@@ -33,31 +48,45 @@ export const getBoardById = async (req: Request, res: Response) => {
     }
 };
 
-export const updateBoard = async (req: Request, res: Response) => {
+export const updateBoard = async (req: AuthRequest, res: Response) => {
     try {
         const { title, data } = req.body;
-        const board = await Board.findByIdAndUpdate(
-            req.params.id,
+        const firebaseUid = req.user!.uid;
+
+        const board = await Board.findOneAndUpdate(
+            { _id: req.params.id, firebaseUid },
             { title, data, updatedAt: new Date() },
             { new: true }
         );
+
         if (!board) {
-            res.status(404).json({ message: 'Board not found' });
+            res.status(404).json({
+                message: 'Board not found or unauthorized',
+            });
             return;
         }
+
         res.json(board);
     } catch (err) {
         res.status(500).json({ error: (err as Error).message });
     }
 };
 
-export const deleteBoard = async (req: Request, res: Response) => {
+export const deleteBoard = async (req: AuthRequest, res: Response) => {
     try {
-        const board = await Board.findByIdAndDelete(req.params.id);
+        const firebaseUid = req.user!.uid;
+
+        const board = await Board.findOneAndDelete({
+            _id: req.params.id,
+            firebaseUid,
+        });
         if (!board) {
-            res.status(404).json({ message: 'Board not found' });
+            res.status(404).json({
+                message: 'Board not found or unauthorized',
+            });
             return;
         }
+
         res.json({ message: 'Board deleted' });
     } catch (err) {
         res.status(500).json({ error: (err as Error).message });

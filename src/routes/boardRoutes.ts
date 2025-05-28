@@ -6,8 +6,11 @@ import {
     updateBoard,
     deleteBoard,
 } from '../controllers/boardController.js';
+import { isAuthenticated } from '../middlewares/isAuthenticated.js';
 
 const router = Router();
+
+router.use(isAuthenticated);
 
 router.post('/', createBoard);
 router.get('/', getBoards);

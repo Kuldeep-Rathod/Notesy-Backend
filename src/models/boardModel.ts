@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IBoard extends Document {
+    firebaseUid: string;
     title: string;
     data: {
         elements: any[];
@@ -13,6 +14,7 @@ export interface IBoard extends Document {
 
 const boardSchema = new Schema<IBoard>(
     {
+        firebaseUid: { type: String, required: true },
         title: { type: String, required: true },
         data: { type: Object, required: true },
     },
