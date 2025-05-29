@@ -13,9 +13,8 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
         ]);
 
         if (!user) {
-            return res
-                .status(404)
-                .json({ success: false, message: 'User not found' });
+            res.status(404).json({ success: false, message: 'User not found' });
+            return;
         }
 
         let totalNotes = notes.length;
