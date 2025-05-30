@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import {
-    register,
-    logout,
     checkUserExists,
+    logout,
+    register,
 } from '../controllers/authController.js';
-import { isAuthenticated } from '../middlewares/isAuthenticated.js';
 
 const router = Router();
 

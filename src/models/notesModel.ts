@@ -9,7 +9,6 @@ export interface INote extends Document {
     firebaseUid: string;
     noteTitle?: string;
     noteBody?: string;
-    audio?: { url?: string; transcription?: string };
     checklists?: ChecklistItem[];
     bgColor?: string;
     labels?: string[];
@@ -35,10 +34,6 @@ const noteSchema = new Schema<INote>(
         firebaseUid: { type: String, required: true },
         noteTitle: { type: String, default: '' },
         noteBody: { type: String, default: '' },
-        audio: {
-            url: { type: String },
-            transcription: { type: String },
-        },
         checklists: [checklistItemSchema],
         bgColor: { type: String, default: '#ffffff' },
         labels: [{ type: String }],

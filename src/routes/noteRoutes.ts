@@ -1,5 +1,11 @@
 import express from 'express';
-import { isAuthenticated } from '../middlewares/isAuthenticated.js';
+import {
+    getCollaborators,
+    getNotesSharedWithMe,
+    leaveSharedNote,
+    removeCollaborator,
+    shareNote,
+} from '../controllers/collabController.js';
 import {
     createNote,
     deleteNote,
@@ -11,19 +17,9 @@ import {
     restoreNote,
     updateNote,
 } from '../controllers/noteController.js';
-import {
-    getNotesSharedWithMe,
-    shareNote,
-    getCollaborators,
-    removeCollaborator,
-    leaveSharedNote,
-} from '../controllers/collabController.js';
 import { multipleUpload } from '../middlewares/multer.js';
 
 const router = express.Router();
-
-// Protect all routes
-router.use(isAuthenticated);
 
 // Notes routes
 router.get('/', getUserNotes);
@@ -37,10 +33,10 @@ router.get('/trashed', getTrashedNotes);
 router.get('/archived', getArchivedNotes);
 
 // Collaboration routes
-router.post('/share', shareNote); // Share a note
-router.get('/shared-with-me', getNotesSharedWithMe); // Notes shared with user
-router.get('/:noteId/collaborators', getCollaborators); // Get collaborators of a note
-router.post('/remove-collaborator', removeCollaborator); // Remove a collaborator
-router.post('/leave-note', leaveSharedNote); // Collaborator leaves note
+router.post('/share', shareNote);
+router.get('/shared-with-me', getNotesSharedWithMe);
+router.get('/:noteId/collaborators', getCollaborators);
+router.post('/remove-collaborator', removeCollaborator);
+router.post('/leave-note', leaveSharedNote);
 
 export default router;

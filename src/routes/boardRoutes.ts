@@ -1,16 +1,13 @@
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import {
     createBoard,
-    getBoards,
-    getBoardById,
-    updateBoard,
     deleteBoard,
+    getBoardById,
+    getBoards,
+    updateBoard,
 } from '../controllers/boardController.js';
-import { isAuthenticated } from '../middlewares/isAuthenticated.js';
 
 const router = Router();
-
-router.use(isAuthenticated);
 
 router.post('/', createBoard);
 router.get('/', getBoards);

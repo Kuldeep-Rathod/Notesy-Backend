@@ -30,7 +30,6 @@ export const getNoteStats = async (req: AuthRequest, res: Response) => {
         const now = new Date();
         const monthWiseStats: number[] = Array(12).fill(0);
 
-        // Initialize labelMap with all user-defined labels (count starts at 0)
         user.labels.forEach((label) => {
             labelMap[label] = 0;
         });

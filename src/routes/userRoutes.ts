@@ -5,13 +5,9 @@ import {
     getUserProfile,
     updateUserProfile,
 } from '../controllers/userController.js';
-import { isAuthenticated } from '../middlewares/isAuthenticated.js';
 import { singleUpload } from '../middlewares/multer.js';
 
 const router = Router();
-
-// Protect all routes
-router.use(isAuthenticated);
 
 router.get('/me', getUserProfile);
 router.delete('/me', deleteUserProfile);

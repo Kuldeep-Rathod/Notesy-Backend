@@ -82,7 +82,7 @@ export const getNotesSharedWithMe = asyncHandler(
     }
 );
 
-// 2. Get list of collaborators for a note
+// Get list of collaborators for a note
 export const getCollaborators = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         const { noteId } = req.params;
@@ -112,7 +112,6 @@ export const getCollaborators = asyncHandler(
             return;
         }
 
-        // Updated query to use firebaseUid instead of uid
         const collaborators = await User.find({
             firebaseUid: { $in: note.sharedWith },
         }).select('firebaseUid email name photo');
@@ -126,7 +125,6 @@ export const getCollaborators = asyncHandler(
     }
 );
 
-// 3. Remove a collaborator from note
 export const removeCollaborator = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         const { noteId, userId }: { noteId: string; userId: string } = req.body;
@@ -181,7 +179,6 @@ export const removeCollaborator = asyncHandler(
     }
 );
 
-// 4. Leave a shared note (for collaborators)
 export const leaveSharedNote = asyncHandler(
     async (req: AuthRequest, res: Response) => {
         const { noteId }: { noteId: string } = req.body;

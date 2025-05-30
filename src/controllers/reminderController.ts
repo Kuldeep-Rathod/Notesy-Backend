@@ -125,7 +125,7 @@ const sendReminderEmail = async (
             to,
             subject,
             html,
-            text, // Fallback text version
+            text,
         });
 
         if (error) {
@@ -160,7 +160,7 @@ export const scheduleReminders = async (req: Request, res: Response) => {
 
             schedule.scheduleJob(reminderTime, async () => {
                 try {
-                    const email = 'devcode.rtd@gmail.com'; // In production, use note.user.email
+                    const email = 'devcode.rtd@gmail.com';
                     const subject = `Reminder: ${note.noteTitle || 'Untitled Note'}`;
                     const html = getReminderEmailTemplate(
                         note.noteTitle || '',
