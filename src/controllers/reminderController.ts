@@ -1,9 +1,8 @@
-import { Request, Response } from 'express';
-import schedule from 'node-schedule';
-import { Note } from '../models/notesModel.js';
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+import { Response } from "express";
+import schedule from "node-schedule";
+import nodemailer from "nodemailer";
+import { AuthRequest } from "../middlewares/isAuthenticated.js";
+import { Note } from "../models/notesModel.js";
 
 // HTML template for reminder emails
 const getReminderEmailTemplate = (
@@ -90,10 +89,10 @@ const getReminderEmailTemplate = (
             <p>This is a reminder about your note:</p>
             
             <div class="note-card">
-                <div class="note-title">${noteTitle || 'Untitled Note'}</div>
-                <div class="note-content">${noteBody || 'You have a note reminder.'}</div>
+                <div class="note-title">${noteTitle || "Untitled Note"}</div>
+                <div class="note-content">${noteBody || "You have a note reminder."}</div>
                 <div class="reminder-time">Reminder set for: ${reminderTime.toLocaleString()}</div>
-                <a href="${process.env.CLIENT_URL || 'https://yourapp.com'}/dashboard" class="button">View Note</a>
+                <a href="${process.env.CLIENT_URL || "https://yourapp.com"}/dashboard" class="button">View Note</a>
             </div>
             
             <p>If you no longer need this reminder, you can dismiss it in the app.</p>
@@ -101,8 +100,8 @@ const getReminderEmailTemplate = (
             <div class="footer">
                 <p>© ${new Date().getFullYear()} Notesy. All rights reserved.</p>
                 <p>
-                    <a href="${process.env.CLIENT_URL || 'https://yourapp.com'}/unsubscribe">Unsubscribe</a> | 
-                    <a href="${process.env.CLIENT_URL || 'https://yourapp.com'}/preferences">Notification Preferences</a>
+                    <a href="${process.env.CLIENT_URL || "https://yourapp.com"}/unsubscribe">Unsubscribe</a> | 
+                    <a href="${process.env.CLIENT_URL || "https://yourapp.com"}/preferences">Notification Preferences</a>
                 </p>
             </div>
         </div>
@@ -111,6 +110,16 @@ const getReminderEmailTemplate = (
     `;
 };
 
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+    },
+});
+
 const sendReminderEmail = async (
     to: string,
     subject: string,
@@ -118,29 +127,23 @@ const sendReminderEmail = async (
     text: string
 ) => {
     try {
-        const { data, error } = await resend.emails.send({
-            from:
-                process.env.RESEND_FROM_EMAIL ||
-                'Notes App <onboarding@resend.dev>',
+        const info = await transporter.sendMail({
+            from: `"Notesy" <${process.env.SMTP_USER}>`,
             to,
             subject,
-            html,
             text,
+            html,
         });
 
-        if (error) {
-            console.error('Error sending email via Resend:', error);
-            throw error;
-        }
-        return data;
+        return info;
     } catch (error) {
-        console.error('Unexpected error sending email via Resend:', error);
+        console.error("Unexpected error sending email:", error);
         throw error;
     }
 };
 
 // Controller to schedule reminder emails
-export const scheduleReminders = async (req: Request, res: Response) => {
+export const scheduleReminders = async (req: AuthRequest, res: Response) => {
     try {
         const notes = await Note.find({
             reminder: { $gte: new Date() },
@@ -150,31 +153,29 @@ export const scheduleReminders = async (req: Request, res: Response) => {
 
         if (!notes.length) {
             res.status(200).json({
-                message: 'No notes with upcoming reminders.',
+                message: "No notes with upcoming reminders.",
             });
             return;
         }
 
         notes.forEach((note) => {
             const reminderTime = new Date(note.reminder!);
+            const userEmail = req.user?.email || "devcode.rtd@gmail.com";
 
             schedule.scheduleJob(reminderTime, async () => {
                 try {
-                    const email = 'devcode.rtd@gmail.com';
-                    const subject = `Reminder: ${note.noteTitle || 'Untitled Note'}`;
+                    const subject = `Reminder: ${note.noteTitle || "Untitled Note"}`;
                     const html = getReminderEmailTemplate(
-                        note.noteTitle || '',
-                        note.noteBody || '',
+                        note.noteTitle || "",
+                        note.noteBody || "",
                         reminderTime,
-                        (
-                            note._id as string | number | { toString(): string }
-                        ).toString()
+                        (note._id as string).toString()
                     );
-                    const text = `Reminder: ${note.noteTitle || 'Untitled Note'}\n\n${
-                        note.noteBody || 'You have a note reminder.'
+                    const text = `Reminder: ${note.noteTitle || "Untitled Note"}\n\n${
+                        note.noteBody || "You have a note reminder."
                     }\n\nReminder set for: ${reminderTime.toLocaleString()}`;
 
-                    await sendReminderEmail(email, subject, html, text);
+                    await sendReminderEmail(userEmail, subject, html, text);
                     console.log(`Reminder sent for note ${note._id}`);
                 } catch (error) {
                     console.error(
@@ -189,7 +190,7 @@ export const scheduleReminders = async (req: Request, res: Response) => {
             message: `${notes.length} reminder(s) scheduled.`,
         });
     } catch (error) {
-        console.error('Error scheduling reminders:', error);
-        res.status(500).json({ error: 'Failed to schedule reminders.' });
+        console.error("Error scheduling reminders:", error);
+        res.status(500).json({ error: "Failed to schedule reminders." });
     }
 };
