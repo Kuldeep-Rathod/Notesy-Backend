@@ -9,9 +9,11 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import reminderRoutes from './routes/reminderRoutes.js';
 import statsRoutes from './routes/statsRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 export const registerRoutes = (app: Express): void => {
     app.use('/api/v1/auth', authRoutes);
+    app.use('/api/v1/ai', aiRoutes);
 
     app.use(isAuthenticated);
 
